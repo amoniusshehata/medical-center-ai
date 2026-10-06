@@ -1,7 +1,25 @@
 const seed={center:{name:'مركز الشفاء الطبي',address:'قنا — شارع المثال',phone:'01000000000',hours:'السبت–الخميس: 10 ص – 10 م',branches:'فرع رئيسي'},clinics:[{id:1,name:'الجلدية',desc:'تشخيص وعلاج أمراض الجلد'},{id:2,name:'الأطفال',desc:'متابعة وعلاج الأطفال'},{id:3,name:'الباطنة',desc:'كشف ومتابعة الأمراض الباطنة'},{id:4,name:'الأسنان',desc:'علاج وفحص الأسنان'},{id:5,name:'العظام',desc:'عظام ومفاصل'},{id:6,name:'النساء والتوليد',desc:'متابعة النساء والتوليد'}],doctors:[{id:1,name:'د. أحمد محمد',specialty:'جلدية',clinicId:1,days:'السبت، الإثنين، الأربعاء',time:'5 م – 9 م'},{id:2,name:'د. سارة علي',specialty:'أطفال',clinicId:2,days:'الأحد، الثلاثاء، الخميس',time:'4 م – 8 م'}],services:[{id:1,name:'كشف جلدية',clinicId:1,doctorId:1,price:'300'},{id:2,name:'كشف أطفال',clinicId:2,doctorId:2,price:'250'}],faqs:[{id:1,q:'ما هي مواعيد العمل؟',a:'المركز يعمل من السبت إلى الخميس من 10 صباحًا حتى 10 مساءً.'},{id:2,q:'هل يوجد حجز مسبق؟',a:'نعم، يمكن طلب الحجز من خلال خدمة الاستقبال.'}]};
 function normalizeData(data){data=data||JSON.parse(JSON.stringify(seed));data.clinics=(data.clinics||[]).map(c=>{const {price,...clinic}=c;return clinic});data.doctors=(data.doctors||[]).map(d=>({...d,clinicId:d.clinicId||findClinicIdByName(data.clinics,d.specialty)}));data.services=(data.services||[]).map(s=>({...s,clinicId:s.clinicId||findClinicIdByName(data.clinics,s.name),doctorId:s.doctorId||null}));return data}
 function findClinicIdByName(clinics,text){if(!text)return clinics[0]?.id||null;const t=String(text).toLowerCase();return clinics.find(c=>t.includes(String(c.name).toLowerCase())||String(c.name).toLowerCase().includes(t))?.id||clinics[0]?.id||null}
-let db=normalizeData(JSON.parse(localStorage.getItem('medicalAI'))||seed);JSON.parse(localStorage.getItem('medicalAI'))||seed;let page='dashboard';const $=s=>document.querySelector(s);const save=()=>localStorage.setItem('medicalAI',JSON.stringify(db));
+let db=null;let page='dashboard';const $=s=>document.querySelector(s);const save=()=>localStorage.setItem('medicalAI',JSON.stringify(db));
+async function initData(){
+  const stored=localStorage.getItem('medicalAI');
+  if(stored){
+    try{db=normalizeData(JSON.parse(stored));}
+    catch{localStorage.removeItem('medicalAI');}
+  }
+  if(!db){
+    try{
+      const res=await fetch('data/medical-center.json');
+      if(!res.ok)throw new Error('Knowledge base unavailable');
+      db=normalizeData(await res.json());
+    }catch{
+      db=normalizeData(seed);
+    }
+  }
+  render();
+}
+
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{page=b.dataset.page;document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x===b));render()});$('#saveAll').onclick=()=>{save();toast('تم حفظ البيانات بنجاح')};function toast(t){alert(t)}
 function render(){let titles={dashboard:'لوحة التحكم',center:'بيانات المركز',clinics:'العيادات',faqs:'الأسئلة الشائعة',chat:'المساعد الذكي'};$('#title').textContent=titles[page];let c=$('#content');({dashboard,center,clinics,faqs,chat}[page])(c)}
 function dashboard(c){c.innerHTML=`<div class="grid"><div class="card"><span class="muted">العيادات</span><div class="stat">${db.clinics.length}</div><span class="muted">عيادة مسجلة</span></div><div class="card"><span class="muted">الأطباء</span><div class="stat">${db.doctors.length}</div><span class="muted">طبيب مسجل</span></div><div class="card"><span class="muted">الأسئلة الشائعة</span><div class="stat">${db.faqs.length}</div><span class="muted">إجابة جاهزة للـAI</span></div></div><br><div class="notice">هذه نسخة تجريبية. البيانات الحالية تجريبية، ويمكن تعديلها وحفظها محليًا. لا تدخل بيانات مرضى حقيقية في هذه النسخة.</div><div class="card"><h3>جاهز لتجربة المساعد</h3><p class="muted">ادخل إلى «تجربة الـAI» واسأل عن العيادات، الأسعار، المواعيد أو بيانات المركز.</p><button class="primary" onclick="page='chat';document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.page==='chat'));render()">ابدأ التجربة</button></div>`}
@@ -75,4 +93,4 @@ function answer(question){
 }
 function quickAsk(text){const input=$('#q');if(!input)return;input.value=text;send()}
 function send(){let v=q.value.trim();if(!v)return;let m=$('#msgs');m.innerHTML+=`<div class="msg user">${escapeHtml(v)}</div><div class="msg bot">${answer(v)}</div>`;q.value='';m.scrollTop=m.scrollHeight}
-function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}render();
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}initData();
