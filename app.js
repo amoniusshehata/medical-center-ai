@@ -92,6 +92,7 @@ function answer(question){
   return 'مش لاقي إجابة مؤكدة في البيانات المسجلة. جرّب السؤال عن العيادات، طبيب معين، المواعيد، الخدمات، الأسعار، عنوان المركز أو رقم الهاتف.';
 }
 function quickAsk(text){const input=$('#q');if(!input)return;input.value=text;send()}
+const API_URL='https://medical-center-ai.vercel.app/api/chat';
 async function send(){
   let v=q.value.trim();
   if(!v)return;
@@ -101,7 +102,7 @@ async function send(){
   m.innerHTML+=`<div class="msg bot" id="typing">جاري التفكير...</div>`;
   m.scrollTop=m.scrollHeight;
   try{
-    const res=await fetch('/api/chat',{
+    const res=await fetch(API_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({message:v})
