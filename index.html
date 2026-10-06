@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Medical Center AI</title><link rel="stylesheet" href="style.css"></head>
-<body><div class="app"><header><h1>Medical Center AI</h1><p>نموذج أولي لإدارة معلومات المركز واختبار المساعد الذكي</p></header><main>
-<section class="card"><h2>بيانات المركز</h2><input id="centerName" placeholder="اسم المركز"><input id="phone" placeholder="رقم الهاتف"><textarea id="address" placeholder="العنوان"></textarea><button onclick="saveCenter()">حفظ</button></section>
-<section class="card"><h2>العيادات</h2><div id="clinics"></div><button onclick="addClinic()">إضافة عيادة</button></section>
-<section class="card"><h2>الخدمات والأسعار</h2><div id="services"></div><button onclick="addService()">إضافة خدمة</button></section>
-<section class="card"><h2>الأسئلة الشائعة</h2><div id="faqs"></div><button onclick="addFaq()">إضافة سؤال</button></section>
-<section class="card"><h2>Test Chat</h2><div id="chat"></div><div class="row"><input id="msg" placeholder="اكتب سؤالاً مثل: مواعيد العيادات؟"><button onclick="chat()">إرسال</button></div></section>
-</main></div><script src="app.js"></script></body></html>
+<body><div class="app">
+<aside><div class="brand"><div class="logo">AI</div><div><b>Medical Center AI</b><small>Assistant MVP</small></div></div>
+<button class="nav active" data-page="dashboard">لوحة التحكم</button><button class="nav" data-page="center">بيانات المركز</button><button class="nav" data-page="clinics">العيادات</button><button class="nav" data-page="doctors">الأطباء والمواعيد</button><button class="nav" data-page="services">الخدمات والأسعار</button><button class="nav" data-page="faqs">الأسئلة الشائعة</button><button class="nav" data-page="chat">تجربة الـAI</button><div class="status"><span></span> نسخة تجريبية</div></aside>
+<main><header><div><p class="eyebrow">MEDICAL CENTER AI</p><h1 id="title">لوحة التحكم</h1></div><button id="saveAll" class="primary">حفظ البيانات</button></header><div id="content"></div></main>
+</div><script src="app.js"></script></body></html>
