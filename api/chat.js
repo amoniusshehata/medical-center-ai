@@ -10,7 +10,9 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return res.status(500).json({ error: 'Gemini key is not configured' });
+  if (!key) {
+    return res.status(500).json({ error: 'Gemini key is not configured' });
+  }
 
   try {
     const body = req.body || {};
@@ -35,7 +37,9 @@ module.exports = async function handler(req, res) {
       JSON.stringify(knowledge)
     ].join('\n');
 
-    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
+    const apiUrl =
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -43,11 +47,12 @@ module.exports = async function handler(req, res) {
         'x-goog-api-key': key
       },
       body: JSON.stringify({
-        system_instruction: {
+        systemInstruction: {
           parts: [{ text: instruction }]
         },
         contents: [
           {
+            role: 'user',
             parts: [{ text: message }]
           }
         ],
@@ -58,21 +63,49 @@ module.exports = async function handler(req, res) {
       })
     });
 
-    const data = await response.json();
+    const raw = await response.text();
+
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = { raw };
+    }
 
     if (!response.ok) {
-      return res.status(response.status).json({
-        error: data && data.error ? data.error.message : 'Gemini request failed'
+      const geminiError =
+        data?.error?.message ||
+        data?.error?.status ||
+        data?.raw ||
+        'Gemini request failed';
+
+      console.error('Gemini API error:', response.status, geminiError);
+
+      return res.status(502).json({
+        error: 'Gemini API error',
+        status: response.status,
+        details: geminiError
       });
     }
 
-    const answer = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+    const answer =
+      data?.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text || '')
+        .join('') || '';
 
-    if (!answer) return res.status(502).json({ error: 'No text response' });
+    if (!answer) {
+      console.error('Gemini returned no text:', JSON.stringify(data));
+      return res.status(502).json({
+        error: 'Gemini returned no text response'
+      });
+    }
 
     return res.status(200).json({ answer });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('Server error:', error);
+    return res.status(500).json({
+      error: 'Server error',
+      details: error?.message || 'Unknown error'
+    });
   }
 };
