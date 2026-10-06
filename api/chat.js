@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
       JSON.stringify(knowledge)
     ].join('\n');
 
-    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -43,12 +43,17 @@ module.exports = async function handler(req, res) {
         'x-goog-api-key': key
       },
       body: JSON.stringify({
-        model: 'gemini-3.8-flash',
-        system_instruction: instruction,
-        input: message,
-        generation_config: {
+        system_instruction: {
+          parts: [{ text: instruction }]
+        },
+        contents: [
+          {
+            parts: [{ text: message }]
+          }
+        ],
+        generationConfig: {
           temperature: 0.2,
-          max_output_tokens: 500
+          maxOutputTokens: 500
         }
       })
     });
@@ -61,14 +66,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    let answer = data.output_text;
-    if (!answer && Array.isArray(data.steps)) {
-      const modelStep = data.steps.slice().reverse().find(step => step.type === 'model_output');
-      if (modelStep && Array.isArray(modelStep.content)) {
-        const textPart = modelStep.content.find(part => part.type === 'text');
-        answer = textPart && textPart.text;
-      }
-    }
+    const answer = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
 
     if (!answer) return res.status(502).json({ error: 'No text response' });
 
