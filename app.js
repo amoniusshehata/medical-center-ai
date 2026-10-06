@@ -92,5 +92,29 @@ function answer(question){
   return 'مش لاقي إجابة مؤكدة في البيانات المسجلة. جرّب السؤال عن العيادات، طبيب معين، المواعيد، الخدمات، الأسعار، عنوان المركز أو رقم الهاتف.';
 }
 function quickAsk(text){const input=$('#q');if(!input)return;input.value=text;send()}
-function send(){let v=q.value.trim();if(!v)return;let m=$('#msgs');m.innerHTML+=`<div class="msg user">${escapeHtml(v)}</div><div class="msg bot">${answer(v)}</div>`;q.value='';m.scrollTop=m.scrollHeight}
+async function send(){
+  let v=q.value.trim();
+  if(!v)return;
+  let m=$('#msgs');
+  m.innerHTML+=`<div class="msg user">${escapeHtml(v)}</div>`;
+  q.value='';
+  m.innerHTML+=`<div class="msg bot" id="typing">جاري التفكير...</div>`;
+  m.scrollTop=m.scrollHeight;
+  try{
+    const res=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:v})
+    });
+    const data=await res.json();
+    const typing=document.getElementById('typing');
+    if(!res.ok)throw new Error(data.error||'تعذر الاتصال بالمساعد');
+    if(typing)typing.outerHTML=`<div class="msg bot">${escapeHtml(data.answer||'لم تصل إجابة.')}</div>`;
+  }catch(error){
+    const typing=document.getElementById('typing');
+    const fallback=answer(v);
+    if(typing)typing.outerHTML=`<div class="msg bot">${fallback}<br><small>تعذر الاتصال بخدمة AI حاليًا، لذلك تم استخدام المساعد المحلي.</small></div>`;
+  }
+  m.scrollTop=m.scrollHeight;
+}
 function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}initData();
