@@ -4,3 +4,5 @@
 .modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:20px}.modal-head h2{margin:0 0 5px;font-size:20px}.icon-btn{border:0;background:#eef2f7;border-radius:8px;width:36px;height:36px;font-size:24px;cursor:pointer;color:#526173}
 .modal-actions{display:flex;justify-content:flex-start;gap:8px;margin-top:22px;padding-top:16px;border-top:1px solid #e7ebf2}
 @media(max-width:650px){.modal-backdrop{padding:10px}.modal{padding:17px}.modal .fields{grid-template-columns:1fr}}
+
+.doctor-builder{margin-top:20px;border:1px solid #e7ebf2;border-radius:12px;padding:16px;background:#f8fafc}.builder-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.builder-head h3{margin:0 0 5px;font-size:16px}.doctor-rows{display:grid;gap:12px}.doctor-row{background:#fff;border:1px solid #e0e6ef;border-radius:10px;padding:14px;margin-top:12px}.doctor-row .danger{margin-top:12px}
