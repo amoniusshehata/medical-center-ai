@@ -3,7 +3,7 @@ function normalizeData(data){data=data||JSON.parse(JSON.stringify(seed));data.cl
 function findClinicIdByName(clinics,text){if(!text)return clinics[0]?.id||null;const t=String(text).toLowerCase();return clinics.find(c=>t.includes(String(c.name).toLowerCase())||String(c.name).toLowerCase().includes(t))?.id||clinics[0]?.id||null}
 let db=normalizeData(JSON.parse(localStorage.getItem('medicalAI'))||seed);JSON.parse(localStorage.getItem('medicalAI'))||seed;let page='dashboard';const $=s=>document.querySelector(s);const save=()=>localStorage.setItem('medicalAI',JSON.stringify(db));
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{page=b.dataset.page;document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x===b));render()});$('#saveAll').onclick=()=>{save();toast('تم حفظ البيانات بنجاح')};function toast(t){alert(t)}
-function render(){let titles={dashboard:'لوحة التحكم',center:'بيانات المركز',clinics:'العيادات',faqs:'الأسئلة الشائعة',chat:'تجربة الـAI'};$('#title').textContent=titles[page];let c=$('#content');({dashboard,center,clinics,faqs,chat}[page])(c)}
+function render(){let titles={dashboard:'لوحة التحكم',center:'بيانات المركز',clinics:'العيادات',faqs:'الأسئلة الشائعة',chat:'المساعد الذكي'};$('#title').textContent=titles[page];let c=$('#content');({dashboard,center,clinics,faqs,chat}[page])(c)}
 function dashboard(c){c.innerHTML=`<div class="grid"><div class="card"><span class="muted">العيادات</span><div class="stat">${db.clinics.length}</div><span class="muted">عيادة مسجلة</span></div><div class="card"><span class="muted">الأطباء</span><div class="stat">${db.doctors.length}</div><span class="muted">طبيب مسجل</span></div><div class="card"><span class="muted">الأسئلة الشائعة</span><div class="stat">${db.faqs.length}</div><span class="muted">إجابة جاهزة للـAI</span></div></div><br><div class="notice">هذه نسخة تجريبية. البيانات الحالية تجريبية، ويمكن تعديلها وحفظها محليًا. لا تدخل بيانات مرضى حقيقية في هذه النسخة.</div><div class="card"><h3>جاهز لتجربة المساعد</h3><p class="muted">ادخل إلى «تجربة الـAI» واسأل عن العيادات، الأسعار، المواعيد أو بيانات المركز.</p><button class="primary" onclick="page='chat';document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.page==='chat'));render()">ابدأ التجربة</button></div>`}
 function center(c){c.innerHTML=`<div class="form"><div class="fields"><div class="field"><label>اسم المركز</label><input id="cn" value="${db.center.name}"></div><div class="field"><label>رقم الهاتف</label><input id="cp" value="${db.center.phone}"></div><div class="field full"><label>العنوان</label><input id="ca" value="${db.center.address}"></div><div class="field full"><label>مواعيد العمل</label><input id="ch" value="${db.center.hours}"></div><div class="field full"><label>الفروع</label><input id="cb" value="${db.center.branches}"></div></div><br><button class="primary" onclick="db.center={name:cn.value,address:ca.value,phone:cp.value,hours:ch.value,branches:cb.value};save();toast('تم حفظ بيانات المركز')">حفظ</button></div>`}
 function clinicName(id){return db.clinics.find(c=>c.id===Number(id))?.name||'غير محدد'}
@@ -26,6 +26,53 @@ function escapeAttr(s=''){return escapeHtml(String(s)).replace(/\n/g,'&#10;').re
 function addItem(type){openModal(type)}
 function editItem(type,id){openModal(type,id)}
 function removeItem(type,id){if(confirm('حذف هذا العنصر؟')){db[type]=db[type].filter(x=>x.id!==id);save();render()}}
-function chat(c){c.innerHTML=`<div class="chat"><div class="messages" id="msgs"><div class="msg bot">أهلًا بحضرتك. أنا المساعد الافتراضي لـ${db.center.name}. أقدر أساعدك في معرفة العيادات، الأطباء، الأسعار ومواعيد العمل.</div></div><div class="chatbar"><input id="q" placeholder="اكتب سؤالك هنا..."><button class="primary" onclick="send()">إرسال</button></div></div>`;q.onkeydown=e=>{if(e.key==='Enter')send()}}
-function answer(q){q=q.toLowerCase();if(q.includes('سعر')||q.includes('كشف')||q.includes('فلوس'))return 'الأسعار: '+db.services.map(x=>`${x.name} — ${db.doctors.find(d=>Number(d.id)===Number(x.doctorId))?.name||clinicName(x.clinicId)}: ${x.price} جنيه`).join(' — ');if(q.includes('مواعيد')||q.includes('فاتح')||q.includes('عمل'))return `مواعيد المركز: ${db.center.hours}`;if(q.includes('عياد'))return 'العيادات المتاحة: '+db.clinics.map(x=>x.name).join('، ');if(q.includes('دكتور')||q.includes('طبيب'))return db.doctors.map(x=>`${x.name} — ${x.specialty} — ${x.days} — ${x.time}`).join('\n');for(const f of db.faqs)if(q.includes(f.q.slice(0,6).toLowerCase()))return f.a;return 'أقدر أساعدك في العيادات، الأطباء، الأسعار ومواعيد العمل. ولو سؤالك يحتاج موظفًا، أقدر أحوّل المحادثة للاستقبال.'}
-function send(){let v=q.value.trim();if(!v)return;let m=$('#msgs');m.innerHTML+=`<div class="msg user">${escapeHtml(v)}</div><div class="msg bot">${escapeHtml(answer(v)).replaceAll('\n','<br>')}</div>`;q.value='';m.scrollTop=m.scrollHeight}function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}render();
+function chat(c){c.innerHTML=`<div class="chat"><div class="chat-intro"><h2>المساعد الذكي</h2><p class="muted">اسألني عن أي معلومة مسجلة في المركز: العيادات، الأطباء، مواعيدهم، الخدمات، الأسعار، بيانات المركز والأسئلة الشائعة.</p><div class="suggestions"><button class="secondary" onclick="quickAsk('ما هي العيادات الموجودة؟')">العيادات</button><button class="secondary" onclick="quickAsk('ما أسعار الخدمات؟')">الأسعار</button><button class="secondary" onclick="quickAsk('ما مواعيد الأطباء؟')">الأطباء والمواعيد</button><button class="secondary" onclick="quickAsk('ما مواعيد عمل المركز؟')">مواعيد المركز</button></div></div><div class="messages" id="msgs"><div class="msg bot">أهلًا بحضرتك. أنا المساعد الذكي لـ${escapeHtml(db.center.name)}. اسألني عن أي معلومة موجودة في بيانات المركز.</div></div><div class="chatbar"><input id="q" placeholder="اكتب سؤالك هنا..."><button class="primary" onclick="send()">إرسال</button></div></div>`;q.onkeydown=e=>{if(e.key==='Enter')send()}}
+function normalizeText(s=''){return String(s).toLowerCase().replace(/[ًٌٍَُِّْـ]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').trim()}
+function formatDoctor(d){
+  const clinic=clinicName(d.clinicId);
+  const services=db.services.filter(s=>Number(s.doctorId)===Number(d.id));
+  const serviceText=services.length?services.map(s=>`${s.name} (${s.price} جنيه)`).join('، '):'لا توجد خدمات مسجلة';
+  return `${d.name} — ${d.specialty} — عيادة ${clinic}. المواعيد: ${d.days||'غير محددة'} ${d.from&&d.to?'من '+d.from+' إلى '+d.to:''}. الخدمات: ${serviceText}.`;
+}
+function answer(question){
+  const q=normalizeText(question);
+  const all=q.replace(/[؟?]/g,'');
+  const center=db.center||{};
+  if(/^(اهلا|السلام عليكم|مرحبا|هاي|hello|hi)/.test(all)) return `أهلًا بحضرتك. أقدر أساعدك في معلومات ${center.name||'المركز'} والعيادات والأطباء والخدمات والأسعار والمواعيد.`;
+  if(q.includes('مواعيد العمل')||q.includes('مواعيد المركز')||q.includes('فاتح')||q.includes('بيشتغل')||q.includes('ساعات العمل'))
+    return `مواعيد عمل ${center.name}: ${center.hours||'غير مسجلة'}.`;
+  if(q.includes('عنوان')||q.includes('فين المركز')||q.includes('المكان')||q.includes('موقع المركز'))
+    return `عنوان المركز: ${center.address||'غير مسجل'}.`;
+  if(q.includes('تليفون')||q.includes('رقم المركز')||q.includes('رقم الهاتف')||q.includes('اتصال'))
+    return `رقم المركز: ${center.phone||'غير مسجل'}.`;
+  if(q.includes('فرع')) return `الفروع: ${center.branches||'لا توجد بيانات فروع مسجلة'}.`;
+  if(q.includes('عياد')||q.includes('تخصص')) {
+    const clinics=db.clinics||[];
+    return clinics.length?`العيادات الموجودة: ${clinics.map(x=>`${x.name}: ${x.desc||''}`).join(' — ')}`:'لا توجد عيادات مسجلة.';
+  }
+  if(q.includes('طبيب')||q.includes('دكتور')||q.includes('مين الدكتور')||q.includes('دكاتره')||q.includes('اطباء')) {
+    const matches=db.doctors.filter(d=>q.includes(normalizeText(d.name))||q.includes(normalizeText(d.specialty))||q.includes(normalizeText(clinicName(d.clinicId))));
+    const doctors=matches.length?matches:db.doctors;
+    return doctors.length?doctors.map(formatDoctor).join('<br><br>'):'لا توجد بيانات أطباء مسجلة.';
+  }
+  if(q.includes('سعر')||q.includes('اسعار')||q.includes('تكلفه')||q.includes('بكام')||q.includes('فلوس')||q.includes('خدم')) {
+    const matches=db.services.filter(s=>q.includes(normalizeText(s.name))||q.includes(normalizeText(db.doctors.find(d=>Number(d.id)===Number(s.doctorId))?.name||''))||q.includes(normalizeText(clinicName(s.clinicId))));
+    const services=matches.length?matches:db.services;
+    return services.length?'الخدمات والأسعار: '+services.map(s=>`${s.name} — ${s.price} جنيه — ${db.doctors.find(d=>Number(d.id)===Number(s.doctorId))?.name||'الطبيب غير محدد'}`).join('، '):'لا توجد خدمات مسجلة.';
+  }
+  for(const f of db.faqs||[]){
+    const fq=normalizeText(f.q);
+    const words=fq.split(/\\s+/).filter(w=>w.length>2);
+    if(words.filter(w=>all.includes(w)).length>=Math.min(2,words.length)) return f.a;
+  }
+  const terms=[...db.clinics.map(x=>x.name),...db.doctors.map(x=>x.name),...db.doctors.map(x=>x.specialty),...db.services.map(x=>x.name)];
+  const matched=terms.find(t=>q.includes(normalizeText(t)));
+  if(matched){
+    const clinic=db.clinics.find(x=>normalizeText(x.name)===normalizeText(matched));
+    if(clinic) return `عيادة ${clinic.name}: ${clinic.desc||'لا يوجد وصف مسجل'}.`;
+  }
+  return 'مش لاقي إجابة مؤكدة في البيانات المسجلة. جرّب السؤال عن العيادات، طبيب معين، المواعيد، الخدمات، الأسعار، عنوان المركز أو رقم الهاتف.';
+}
+function quickAsk(text){const input=$('#q');if(!input)return;input.value=text;send()}
+function send(){let v=q.value.trim();if(!v)return;let m=$('#msgs');m.innerHTML+=`<div class="msg user">${escapeHtml(v)}</div><div class="msg bot">${answer(v)}</div>`;q.value='';m.scrollTop=m.scrollHeight}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}render();
