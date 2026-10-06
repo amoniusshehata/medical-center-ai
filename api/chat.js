@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
       JSON.stringify(knowledge)
     ].join('\n');
 
-    const apiUrl = 'https://generativelanguage.googleapis.com/v1/interactions';
+    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/interactions';
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
